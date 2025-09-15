@@ -7,62 +7,49 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; }
         .container { max-width: 900px; margin: 40px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1, h2 { color: #2c5b4c; }
-        /* Styles pour les vues */
-        #checklist-view, #study-hub-view { padding: 10px; }
+        h1, h2 { color: #2c5b4c; text-align: center; }
         #study-hub-view { display: none; } /* Caché par défaut */
-        /* ... (tous les autres styles de la checklist restent ici) ... */
         .surah-item { padding: 15px; border-bottom: 1px solid #eee; }
         .surah-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .surah-name { font-size: 1.2em; font-weight: 500; color: #2c5b4c; }
-        .study-button { background-color: #2c5b4c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .study-button { background-color: #4a7c6d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 15px; }
+        .study-button:hover { background-color: #2c5b4c; }
         .verse-list { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        #populate-db-button { display: block; margin: 20px auto; padding: 15px 25px; font-size: 1.2em; background-color: #2c5b4c; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Vue Checklist -->
         <div id="checklist-view">
             <h1>Checklist de Mémorisation</h1>
             <div id="surah-list"><p>Chargement...</p></div>
         </div>
-
-        <!-- Vue Hub d'Étude -->
         <div id="study-hub-view">
             <button id="back-to-checklist">Retour à la liste</button>
-            <h1 id="study-surah-title"></h1>
-            <div id="study-content">
-                <!-- Le contenu du Hub d'étude sera injecté ici -->
-                <p>Chargement du hub d'étude...</p>
-            </div>
+            <h2 id="study-surah-title"></h2>
+            <div id="study-content"></div>
         </div>
     </div>
 
     <script>
-        const USERS = ['Soukaina', 'Siham', 'Chaimaa'];
-        const checklistView = document.getElementById('checklist-view');
-        const studyHubView = document.getElementById('study-hub-view');
-
         document.addEventListener('DOMContentLoaded', async () => {
-            await renderSurahList();
+            await renderChecklistView();
             document.getElementById('back-to-checklist').addEventListener('click', showChecklistView);
         });
 
         function showChecklistView() {
-            studyHubView.style.display = 'none';
-            checklistView.style.display = 'block';
+            document.getElementById('study-hub-view').style.display = 'none';
+            document.getElementById('checklist-view').style.display = 'block';
         }
 
         function showStudyHubView(surah) {
-            checklistView.style.display = 'none';
-            studyHubView.style.display = 'block';
+            document.getElementById('checklist-view').style.display = 'none';
+            document.getElementById('study-hub-view').style.display = 'block';
             document.getElementById('study-surah-title').innerText = `Étude de ${surah.name}`;
-            // TODO: Charger et afficher le contenu détaillé du hub d'étude
             document.getElementById('study-content').innerHTML = `<p>Le Hub d'étude pour la sourate ${surah.name} est en construction.</p>`;
         }
 
-        async function renderSurahList() {
-            // ... (le code existant pour renderSurahList, mais avec une modification)
+        async function renderChecklistView() {
             const surahListDiv = document.getElementById('surah-list');
             try {
                 const surahsResponse = await fetch('/api/surahs');
@@ -70,62 +57,40 @@
                 surahListDiv.innerHTML = '';
 
                 if (surahsData.surahs.length === 0) {
-                    // Si la base de données est vide, afficher le bouton
                     surahListDiv.innerHTML = `
                         <h2>Bienvenue !</h2>
-                        <p>La base de données de votre application est vide.</p>
-                        <p>Cliquez sur le bouton ci-dessous pour la remplir avec les données du Coran. Cette opération ne doit être faite qu'une seule fois et peut prendre 1 à 2 minutes.</p>
-                        <button id="populate-db-button">Lancer le Remplissage</button>
-                        <p id="loading-message" style="display:none;">Remplissage en cours, veuillez patienter...</p>
+                        <p style="text-align:center;">La base de données de votre application est vide.</p>
+                        <p style="text-align:center;">Cliquez sur le bouton ci-dessous pour la remplir. L'opération prendra plusieurs minutes et ne doit être faite qu'une seule fois.</p>
+                        <button id="populate-db-button">Lancer le Remplissage de la Base de Données</button>
+                        <p id="loading-message" style="display:none; text-align:center;">Remplissage en cours, veuillez patienter... La page s'actualisera toute seule.</p>
                     `;
                     document.getElementById('populate-db-button').addEventListener('click', async () => {
                         document.getElementById('populate-db-button').style.display = 'none';
                         document.getElementById('loading-message').style.display = 'block';
                         await fetch('/api/populate-database', { method: 'POST' });
-                        // On attend un peu pour laisser le temps au serveur de commencer, puis on recharge.
-                        setTimeout(() => { window.location.reload(); }, 5000); // Recharge la page après 5s
+                        // On donne 2 minutes au serveur pour finir, puis on recharge.
+                        setTimeout(() => { window.location.reload(); }, 120000);
                     });
                 } else {
-                    // Sinon, afficher la liste des sourates
+                    // Le code pour afficher la liste des sourates (simplifié pour l'instant)
                     for (const surah of surahsData.surahs) {
-                        // ... (code existant pour afficher la liste)
+                        const surahElement = document.createElement('div');
+                        surahElement.classList.add('surah-item');
+                        surahElement.innerHTML = `
+                            <div class="surah-header">
+                                <span class="surah-name">${surah.id}. ${surah.name}</span>
+                                <button class="study-button">Étudier</button>
+                            </div>
+                        `;
+                        surahElement.querySelector('.study-button').addEventListener('click', () => showStudyHubView(surah));
+                        surahListDiv.appendChild(surahElement);
                     }
                 }
-                    const surahElement = document.createElement('div');
-                    surahElement.classList.add('surah-item');
-                    surahElement.dataset.surahId = surah.id;
-                    
-                    // Le reste du code pour créer l'élément de la sourate...
-                    // ...
-                    // On ajoute le bouton "Étudier"
-                    const studyButton = document.createElement('button');
-                    studyButton.innerText = 'Étudier';
-                    studyButton.classList.add('study-button');
-                    studyButton.onclick = (e) => {
-                        e.stopPropagation(); // Empêcher le dépliage de la liste des versets
-                        showStudyHubView(surah);
-                    };
-
-                    // On récupère le HTML de la sourate (simplifié ici pour la clarté)
-                    surahElement.innerHTML = `
-                        <div class="surah-header">
-                            <span class="surah-name">${surah.id}. ${surah.name}</span>
-                        </div>
-                        <div class="verse-list"></div>`; // Le reste (barres de prog, etc.) serait ici
-                    
-                    surahElement.querySelector('.surah-header').appendChild(studyButton);
-                    surahElement.querySelector('.surah-header').addEventListener('click', () => toggleVerseList(surahElement, surah.id));
-                    surahListDiv.appendChild(surahElement);
-                }
             } catch (error) {
-                console.error('Erreur lors de la récupération des données:', error);
-                surahListDiv.innerHTML = 'Erreur de chargement des données.';
+                console.error('Erreur lors de la récupération des sourates:', error);
+                surahListDiv.innerHTML = 'Erreur de chargement des données. Veuillez réessayer dans quelques instants.';
             }
         }
-        
-        async function toggleVerseList(surahElement, surahId) { /* ... code existant ... */ }
-        // ... (le reste du JS existant)
-
     </script>
 </body>
 </html>
