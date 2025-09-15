@@ -1,0 +1,10 @@
+# Fichiers de dépendances et de build
+node_modules/
+
+# Fichiers de base de données locales
+*.db
+*.db-journal
+
+# Fichiers ZIP et de log
+*.zip
+*.log
