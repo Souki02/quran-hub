@@ -2,6 +2,7 @@
 // Ce fichier sera le coeur de notre serveur.
 
 const express = require('express');
+const axios = require('axios');
 const app = express();
 const port = 3000;
 
