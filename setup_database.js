@@ -14,6 +14,7 @@ const createTables = () => {
         db.serialize(() => {
             console.log('Recréation des tables...');
             db.run(`DROP TABLE IF EXISTS progress`);
+            db.run(`DROP TABLE IF EXISTS notes`);
             db.run(`DROP TABLE IF EXISTS ayahs`);
             db.run(`DROP TABLE IF EXISTS surahs`);
 
@@ -38,6 +39,15 @@ const createTables = () => {
                 memorized_at DATE,
                 PRIMARY KEY (ayah_id, user_name),
                 FOREIGN KEY (ayah_id) REFERENCES ayahs (id)
+            )`);
+
+            db.run(`CREATE TABLE notes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ayah_id INTEGER NOT NULL,
+                user_name TEXT NOT NULL,
+                note_text TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ayah_id) REFERENCES ayahs (id)
             )`, (err) => {
                 if (err) reject(err);
                 else {
@@ -61,22 +71,18 @@ const populateData = async () => {
         const ayahInsertSql = `INSERT INTO ayahs (surah_id, verse_number, text_warsh) VALUES (?, ?, ?)`;
 
         for (const surah of quranData) {
-            // Ajout d'une vérification pour ignorer les entrées vides
             if (!surah || !surah.surah_name) continue;
-            // Insérer les informations de la sourate
+
             await new Promise((resolve, reject) => {
                 db.run(surahInsertSql, [surah.surah_number, surah.surah_name, surah.revelation_place], function(err) {
-                    if (err) reject(err);
-                    else resolve();
+                    if (err) reject(err); else resolve();
                 });
             });
 
-            // Insérer les versets
             for (const verse of surah.verses) {
                 await new Promise((resolve, reject) => {
                     db.run(ayahInsertSql, [surah.surah_number, verse.verse_number, verse.verse_text], function(err) {
-                        if (err) reject(err);
-                        else resolve();
+                        if (err) reject(err); else resolve();
                     });
                 });
             }
@@ -85,7 +91,7 @@ const populateData = async () => {
 
         console.log('Remplissage de la base de données terminé.');
     } catch (error) {
-        console.error('Erreur lors du téléchargement ou du traitement du fichier quran.json:', error.message);
+        console.error('Erreur lors du téléchargement ou du traitement du fichier:', error.message);
     }
 };
 

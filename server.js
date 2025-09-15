@@ -118,6 +118,31 @@ app.post('/api/progress', (req, res) => {
     });
 });
 
+// API pour les notes
+app.get('/api/ayah/:id/notes', (req, res) => {
+    const ayahId = req.params.id;
+    const sql = `SELECT user_name, note_text, created_at FROM notes WHERE ayah_id = ? ORDER BY created_at DESC`;
+    db.all(sql, [ayahId], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({ notes: rows });
+    });
+});
+
+app.post('/api/notes', (req, res) => {
+    const { ayah_id, user_name, note_text } = req.body;
+    const sql = `INSERT INTO notes (ayah_id, user_name, note_text) VALUES (?, ?, ?)`;
+    db.run(sql, [ayah_id, user_name, note_text], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({ message: 'Note ajoutée avec succès.', note_id: this.lastID });
+    });
+});
+
 
 app.listen(port, () => {
   console.log(`L\'application est démarrée sur http://localhost:${port}`);
