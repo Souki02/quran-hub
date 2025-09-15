@@ -69,7 +69,28 @@
                 const surahsData = await surahsResponse.json();
                 surahListDiv.innerHTML = '';
 
-                for (const surah of surahsData.surahs) {
+                if (surahsData.surahs.length === 0) {
+                    // Si la base de données est vide, afficher le bouton
+                    surahListDiv.innerHTML = `
+                        <h2>Bienvenue !</h2>
+                        <p>La base de données de votre application est vide.</p>
+                        <p>Cliquez sur le bouton ci-dessous pour la remplir avec les données du Coran. Cette opération ne doit être faite qu'une seule fois et peut prendre 1 à 2 minutes.</p>
+                        <button id="populate-db-button">Lancer le Remplissage</button>
+                        <p id="loading-message" style="display:none;">Remplissage en cours, veuillez patienter...</p>
+                    `;
+                    document.getElementById('populate-db-button').addEventListener('click', async () => {
+                        document.getElementById('populate-db-button').style.display = 'none';
+                        document.getElementById('loading-message').style.display = 'block';
+                        await fetch('/api/populate-database', { method: 'POST' });
+                        // On attend un peu pour laisser le temps au serveur de commencer, puis on recharge.
+                        setTimeout(() => { window.location.reload(); }, 5000); // Recharge la page après 5s
+                    });
+                } else {
+                    // Sinon, afficher la liste des sourates
+                    for (const surah of surahsData.surahs) {
+                        // ... (code existant pour afficher la liste)
+                    }
+                }
                     const surahElement = document.createElement('div');
                     surahElement.classList.add('surah-item');
                     surahElement.dataset.surahId = surah.id;

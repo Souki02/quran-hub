@@ -143,6 +143,38 @@ app.post('/api/notes', (req, res) => {
     });
 });
 
+// API pour lancer le remplissage de la DB
+app.post('/api/populate-database', async (req, res) => {
+    console.log('Requête de remplissage de la base de données reçue.');
+    res.status(202).json({ message: "Le remplissage de la base de données a commencé. Cela peut prendre quelques minutes." }); // Accepte la requête immédiatement
+
+    // Lance le long processus en arrière-plan
+    try {
+        const url = 'https://raw.githubusercontent.com/thetruetruth/quran-data-kfgqpc/main/warsh/data/warshData_v10.json';
+        const response = await axios.get(url);
+        const quranData = response.data;
+
+        const surahInsertSql = `INSERT INTO surahs (id, name, revelation_type) VALUES (?, ?, ?)`;
+        const ayahInsertSql = `INSERT INTO ayahs (surah_id, verse_number, text_warsh) VALUES (?, ?, ?)`;
+
+        for (const surah of quranData) {
+            if (!surah || !surah.surah_name) continue;
+            await new Promise((resolve, reject) => {
+                db.run(surahInsertSql, [surah.surah_number, surah.surah_name, surah.revelation_place], (err) => err ? reject(err) : resolve());
+            });
+            for (const verse of surah.verses) {
+                await new Promise((resolve, reject) => {
+                    db.run(ayahInsertSql, [surah.surah_number, verse.verse_number, verse.verse_text], (err) => err ? reject(err) : resolve());
+                });
+            }
+            console.log(`Sourate ${surah.surah_number} chargée.`);
+        }
+        console.log('Remplissage de la base de données terminé.');
+    } catch (error) {
+        console.error('Erreur majeure lors du remplissage de la DB:', error.message);
+    }
+});
+
 
 app.listen(port, () => {
   console.log(`L\'application est démarrée sur http://localhost:${port}`);

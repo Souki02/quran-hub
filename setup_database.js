@@ -12,19 +12,13 @@ const db = new sqlite3.Database('./hub_coran.db', (err) => {
 const createTables = () => {
     return new Promise((resolve, reject) => {
         db.serialize(() => {
-            console.log('Recréation des tables...');
-            db.run(`DROP TABLE IF EXISTS progress`);
-            db.run(`DROP TABLE IF EXISTS notes`);
-            db.run(`DROP TABLE IF EXISTS ayahs`);
-            db.run(`DROP TABLE IF EXISTS surahs`);
-
-            db.run(`CREATE TABLE surahs (
+            db.run(`CREATE TABLE IF NOT EXISTS surahs (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 revelation_type TEXT
             )`);
 
-            db.run(`CREATE TABLE ayahs (
+            db.run(`CREATE TABLE IF NOT EXISTS ayahs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 surah_id INTEGER NOT NULL,
                 verse_number INTEGER NOT NULL,
@@ -32,7 +26,7 @@ const createTables = () => {
                 FOREIGN KEY (surah_id) REFERENCES surahs (id)
             )`);
 
-            db.run(`CREATE TABLE progress (
+            db.run(`CREATE TABLE IF NOT EXISTS progress (
                 ayah_id INTEGER NOT NULL,
                 user_name TEXT NOT NULL,
                 is_memorized INTEGER DEFAULT 0,
@@ -41,7 +35,7 @@ const createTables = () => {
                 FOREIGN KEY (ayah_id) REFERENCES ayahs (id)
             )`);
 
-            db.run(`CREATE TABLE notes (
+            db.run(`CREATE TABLE IF NOT EXISTS notes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ayah_id INTEGER NOT NULL,
                 user_name TEXT NOT NULL,
@@ -97,7 +91,6 @@ const populateData = async () => {
 
 const run = async () => {
     await createTables();
-    await populateData();
     db.close((err) => {
         if (err) {
             console.error(err.message);
