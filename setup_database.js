@@ -91,6 +91,21 @@ const populateData = async () => {
 
 const run = async () => {
     await createTables();
+
+    // Vérifier si la table surahs est vide avant de la remplir
+    const count = await new Promise((resolve, reject) => {
+        db.get("SELECT COUNT(*) as count FROM surahs", (err, row) => {
+            if (err) reject(err);
+            else resolve(row.count);
+        });
+    });
+
+    if (count === 0) {
+        await populateData();
+    } else {
+        console.log('Base de données déjà remplie. Saut du remplissage.');
+    }
+
     db.close((err) => {
         if (err) {
             console.error(err.message);
