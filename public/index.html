@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub d'Étude Warsh</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; }
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #2c5b4c; text-align: center; }
+        .surah-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .surah-item:last-child { border-bottom: none; }
+        .surah-header { display: flex; justify-content: space-between; align-items: center; }
+        .surah-name { font-size: 1.2em; font-weight: 500; color: #2c5b4c; }
+        .progress-details { font-size: 0.8em; color: #666; }
+        .progress-bar { width: 100%; height: 8px; background-color: #e0e0e0; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        .progress-bar-inner { height: 100%; width: 0%; background-color: #4caf50; transition: width 0.5s ease-in-out; }
+        .user-progress-container { display: flex; justify-content: space-between; margin-top: 10px; }
+        .user-progress { width: 32%; font-size: 0.75em; }
+        .verse-list { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .verse-item { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; padding: 8px 0; font-size: 0.9em; }
+        .verse-text { color: #555; }
+        .verse-checkboxes { display: contents; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Checklist de Mémorisation</h1>
+        <div id="surah-list">
+            <p>Chargement de la liste des sourates...</p>
+        </div>
+    </div>
+
+    <script>
+        const USERS = ['Soukaina', 'Siham', 'Chaimaa'];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await renderSurahList();
+        });
+
+        async function renderSurahList() {
+            const surahListDiv = document.getElementById('surah-list');
+            try {
+                const surahsResponse = await fetch('/api/surahs');
+                const surahsData = await surahsResponse.json();
+                surahListDiv.innerHTML = '';
+
+                for (const surah of surahsData.surahs) {
+                    const surahElement = document.createElement('div');
+                    surahElement.classList.add('surah-item');
+                    surahElement.dataset.surahId = surah.id;
+
+                    const progressResponse = await fetch(`/api/surah/${surah.id}/progress`);
+                    const progressData = await progressResponse.json();
+
+                    surahElement.innerHTML = createSurahHTML(surah, progressData);
+                    surahListDiv.appendChild(surahElement);
+
+                    surahElement.querySelector('.surah-header').addEventListener('click', () => toggleVerseList(surahElement, surah.id));
+                }
+            } catch (error) {
+                console.error('Erreur lors de la récupération des données:', error);
+                surahListDiv.innerHTML = 'Erreur de chargement des données.';
+            }
+        }
+
+        function createSurahHTML(surah, progressData) {
+            const { total_verses, progress } = progressData;
+            let totalMemorized = 0;
+            USERS.forEach(user => totalMemorized += progress[user]);
+            const groupProgressPercent = total_verses > 0 ? (totalMemorized / (total_verses * USERS.length)) * 100 : 0;
+
+            let userProgressHTML = '';
+            USERS.forEach(user => {
+                const userPercent = total_verses > 0 ? (progress[user] / total_verses) * 100 : 0;
+                userProgressHTML += `
+                    <div class="user-progress">
+                        <span>${user} (${progress[user]}/${total_verses})</span>
+                        <div class="progress-bar"><div class="progress-bar-inner" style="width: ${userPercent}%;"></div></div>
+                    </div>
+                `;
+            });
+
+            return `
+                <div class="surah-header">
+                    <span class="surah-name">${surah.id}. ${surah.name}</span>
+                    <span class="progress-details">Groupe: ${Math.round(groupProgressPercent)}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-bar-inner" style="width: ${groupProgressPercent}%; background-color: #2c5b4c;"></div>
+                </div>
+                <div class="user-progress-container">${userProgressHTML}</div>
+                <div class="verse-list"></div>
+            `;
+        }
+
+        async function toggleVerseList(surahElement, surahId) {
+            const verseListDiv = surahElement.querySelector('.verse-list');
+            const isVisible = verseListDiv.style.display === 'block';
+
+            if (isVisible) {
+                verseListDiv.style.display = 'none';
+            } else {
+                verseListDiv.style.display = 'block';
+                // Charger les versets seulement si la liste est vide
+                if (!verseListDiv.innerHTML) {
+                    verseListDiv.innerHTML = '<p>Chargement des versets...</p>';
+                    const versesResponse = await fetch(`/api/surah/${surahId}/verses`);
+                    const versesData = await versesResponse.json();
+                    renderVerseList(verseListDiv, versesData.verses);
+                }
+            }
+        }
+
+        function renderVerseList(container, verses) {
+            container.innerHTML = '';
+            let header = '<div class="verse-item"><strong>Verset</strong>';
+            USERS.forEach(u => header += `<strong>${u.charAt(0)}</strong>`);
+            header += '</div>';
+            container.innerHTML = header;
+
+            verses.forEach(verse => {
+                const verseElement = document.createElement('div');
+                verseElement.classList.add('verse-item');
+                let checkboxesHTML = '';
+                USERS.forEach(user => {
+                    const isChecked = verse[`${user.toLowerCase()}_mem`] === 1;
+                    checkboxesHTML += `<input type="checkbox" data-ayah-id="${verse.id}" data-user-name="${user}" ${isChecked ? 'checked' : ''}>`;
+                });
+                verseElement.innerHTML = `<span class="verse-text">${verse.verse_number}. ${verse.text_warsh}</span><div class="verse-checkboxes">${checkboxesHTML}</div>`;
+                container.appendChild(verseElement);
+            });
+
+            // Ajouter les écouteurs d'événements sur les nouvelles checkboxes
+            container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', handleCheckboxChange);
+            });
+        }
+
+        async function handleCheckboxChange(event) {
+            const { ayahId, userName } = event.target.dataset;
+            const isMemorized = event.target.checked ? 1 : 0;
+
+            await fetch('/api/progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ayah_id: ayahId, user_name: userName, is_memorized: isMemorized })
+            });
+
+            // Re-rendre toute la liste pour mettre à jour les barres de progression. 
+            // C'est plus simple qu'une mise à jour ciblée pour le moment.
+            await renderSurahList();
+        }
+
+    </script>
+</body>
+</html>
