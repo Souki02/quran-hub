@@ -5,12 +5,6 @@ const path = require('path');
 
 const dbPath = '/var/data/hub_coran.db';
 
-// Assurez-vous que le répertoire existe
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-}
-
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error(err.message);
