@@ -3,7 +3,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-const dbPath = '/var/data/hub_coran.db';
+const dbPath = '/mnt/data/hub_coran.db';
 
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {

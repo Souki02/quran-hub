@@ -10,7 +10,7 @@ const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
 
-const dbPath = '/var/data/hub_coran.db';
+const dbPath = '/mnt/data/hub_coran.db';
 
 // Connexion à la base de données
 const db = new sqlite3.Database(dbPath, (err) => {
