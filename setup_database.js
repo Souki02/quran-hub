@@ -1,7 +1,17 @@
 const sqlite3 = require('sqlite3').verbose();
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
-const db = new sqlite3.Database('/var/data/hub_coran.db', (err) => {
+const dbPath = '/var/data/hub_coran.db';
+
+// Assurez-vous que le répertoire existe
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error(err.message);
         return;

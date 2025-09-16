@@ -7,14 +7,27 @@ const app = express();
 const port = 3000;
 
 const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
+const path = require('path');
+
+const dbPath = '/var/data/hub_coran.db';
+
+// Assurez-vous que le répertoire existe
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
 
 // Connexion à la base de données
-const db = new sqlite3.Database('/var/data/hub_coran.db', (err) => {
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error(err.message);
     }
     console.log('Connecté à la base de données SQLite.');
 });
+
+// Middleware pour comprendre le JSON envoyé par le frontend
+app.use(express.json());
 
 // Middleware pour servir les fichiers statiques (HTML, CSS, JS du frontend)
 app.use(express.static('public'));
@@ -168,7 +181,7 @@ app.post('/api/populate-database', async (req, res) => {
                     db.run(ayahInsertSql, [surah.surah_number, verse.verse_number, verse.verse_text], (err) => err ? reject(err) : resolve());
                 });
             }
-            console.log(`Sourate ${surah.surah_number} chargée.`);
+            console.log(`Sourate ${surah.surah_number} (${surah.surah_name}) chargée.`);
         }
         console.log('Remplissage de la base de données terminé.');
     } catch (error) {
