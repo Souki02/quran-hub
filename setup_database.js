@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const axios = require('axios');
 
-const db = new sqlite3.Database('./hub_coran.db', (err) => {
+const db = new sqlite3.Database('/var/data/hub_coran.db', (err) => {
     if (err) {
         console.error(err.message);
         return;
